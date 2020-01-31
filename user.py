@@ -14,7 +14,7 @@ class User():
         return self.cookie == cookie
 
     def verify_password(self, password):
-        test_hash = sha256(self.salt + password.encode("utf-8")).hexdigest()
+        test_hash = sha256((self.salt + password).encode("utf-8")).hexdigest()
         return test_hash == self.hash
 
     def new_cookie(self):
@@ -32,5 +32,6 @@ class User():
         inst = cls(username)
         inst.salt = str(urandom(128))
         inst.cookie = str(urandom(128))
-        inst.hash = sha256(inst.salt + password.encode("utf-8")).hexdigest()
+        inst.hash = sha256((inst.salt + password).encode("utf-8")).hexdigest()
+        cls._users[username] = inst
         return inst
