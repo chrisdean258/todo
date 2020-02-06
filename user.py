@@ -2,24 +2,43 @@
 
 from hashlib import sha256
 from os import urandom
+from base64 import b64encode
+from datetime import datetime
+from datetime import timedelta
 
 
 class User():
     _users = {}
+    _api_tokens = {}
 
     def __init__(self, username):
         self.username = username
 
     def verify_cookie(self, cookie):
-        return self.cookie == cookie
+        now = datetime.now()
+        self.cookies = {a: b for a, b in self.cookies.items() if b > now}
+        return self.cookies.get(cookie) is not None
 
     def verify_password(self, password):
-        test_hash = sha256((self.salt + password).encode("utf-8")).hexdigest()
-        return test_hash == self.hash
+        return self._hash(password) == self.hash
 
     def new_cookie(self):
-        self.cookie = str(urandom(128))
-        return self.cookie
+        cookie = b64encode(urandom(128)).decode('utf-8')
+        self.cookies[cookie] = datetime.now() + timedelta(days=30)
+        return cookie
+
+    def _hash(self, password):
+        return sha256((self.salt + password).encode("utf-8")).hexdigest()
+
+    def needs_reset(self, cookie):
+        if not self.verify_cookie(cookie):
+            return False
+        expires = self.cookies[cookie]
+        return datetime.now() + timedelta(days=15) > expires
+
+    def invalidate_cookie(self, cookie):
+        if cookie in self.cookies:
+            del self.cookies[cookie]
 
     @staticmethod
     def getByUsername(username):
@@ -30,8 +49,9 @@ class User():
         if username in cls._users:
             return None
         inst = cls(username)
-        inst.salt = str(urandom(128))
-        inst.cookie = str(urandom(128))
-        inst.hash = sha256((inst.salt + password).encode("utf-8")).hexdigest()
+        inst.cookies = {}
+        inst.username = username
+        inst.salt = b64encode(urandom(128)).decode('utf-8')
+        inst.hash = inst._hash(password)
         cls._users[username] = inst
         return inst

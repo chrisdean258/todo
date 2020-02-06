@@ -6,6 +6,7 @@ from flask import redirect
 from flask import render_template
 from flask import request
 from flask import url_for
+from functools import wraps
 from user import User
 
 app = Flask(__name__)
@@ -14,39 +15,52 @@ ERR_BAD_USERNAME = "Usernames must be 3 or more characters"
 ERR_BAD_PASSWORD = "Passwords must be 8 or more characters"
 ERR_USERNAME_TAKEN = "Username already taken"
 
-COOKIE_TIMEOUT=60*60*24*30 # 30 Days
+COOKIE_TIMEOUT = 60 * 60 * 24 * 30  # 30 Days
+
+
+def set_cookie(resp, user):
+    resp.set_cookie("username", user.username, max_age=COOKIE_TIMEOUT)
+    resp.set_cookie("token", user.new_cookie(), max_age=COOKIE_TIMEOUT)
+
+
+def verify_cookie(func):
+    @wraps(func)
+    def f(*args, **kwargs):
+        token = request.cookies.get("token", "")
+        username = request.cookies.get("username", "")
+        user = User.getByUsername(username)
+        if user and user.verify_cookie(token):
+            resp = make_response(func(*args, **kwargs))
+            if user.needs_reset(token):
+                user.invalidate_cookie(token)
+                set_cookie(resp, user)
+            return resp
+        return redirect(url_for('login'))
+    return f
 
 
 @app.route('/', methods=['GET'])
-def index(error=None):
-    login_token = request.cookies.get("login_token", "")
-    username = request.cookies.get("username", "")
-    user = User.getByUsername(username)
-    if user and user.verify_cookie(login_token):
-        resp = make_response(redirect(url_for('todo')))
-        resp.set_cookie("login_token", user.new_cookie())
-        return resp
-    return render_template("index.html", error=error)
+@verify_cookie
+def index():
+    return redirect(url_for('todo'))
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET':
+        return render_template('login.html')
     username = request.form.get("username", "")
     password = request.form.get("password", "")
-    remember = request.form.get("remember", False)
 
     user = User.getByUsername(username)
-
     if user is None:
-        return render_template('index.html', error=ERR_BAD_LOGIN)
+        return render_template('login.html', error=ERR_BAD_LOGIN)
     elif user.verify_password(password):
         resp = make_response(redirect(url_for('todo')))
-        if remember:
-            resp.set_cookie("username", username, max_age=COOKIE_TIMEOUT)
-            resp.set_cookie("login_token", user.new_cookie(), max_age=COOKIE_TIMEOUT)
+        set_cookie(resp, user)
         return resp
     else:
-        return render_template('index.html', error=ERR_BAD_LOGIN)
+        return render_template('login.html', error=ERR_BAD_LOGIN)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -60,13 +74,13 @@ def register():
         return render_template("register.html", error=ERR_BAD_USERNAME)
     if len(password) < 8:
         return render_template("register.html", error=ERR_BAD_PASSWORD)
-    user = User.createUser(username, password)
-    if not user:
+    if not User.createUser(username, password):
         return render_template("register.html", error=ERR_USERNAME_TAKEN)
     return redirect(url_for('todo'))
 
 
 @app.route('/todo', methods=['GET'])
+@verify_cookie
 def todo():
     if request.method == "GET":
         return render_template("todo.html")
