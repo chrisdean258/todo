@@ -22,10 +22,23 @@ class User():
     def verify_password(self, password):
         return self._hash(password) == self.hash
 
+    def verify_session(self, session):
+        now = datetime.now()
+        self.sessions = {a: b for a, b in self.sessions.items() if b > now}
+        return self.sessions.get(session) is not None
+
     def new_cookie(self):
         cookie = b64encode(urandom(128)).decode('utf-8')
         self.cookies[cookie] = datetime.now() + timedelta(days=30)
         return cookie
+
+    def new_session(self):
+        session = b64encode(urandom(128)).decode('utf-8')
+        self.sessions[session] = datetime.now() + timedelta(minutes=5)
+        return session
+
+    def extend_session(self, session):
+        self.sessions[session] = datetime.now() + timedelta(minutes=5)
 
     def _hash(self, password):
         return sha256((self.salt + password).encode("utf-8")).hexdigest()
@@ -50,6 +63,7 @@ class User():
             return None
         inst = cls(username)
         inst.cookies = {}
+        inst.sessions = {}
         inst.username = username
         inst.salt = b64encode(urandom(128)).decode('utf-8')
         inst.hash = inst._hash(password)
