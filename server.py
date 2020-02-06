@@ -14,6 +14,8 @@ ERR_BAD_USERNAME = "Usernames must be 3 or more characters"
 ERR_BAD_PASSWORD = "Passwords must be 8 or more characters"
 ERR_USERNAME_TAKEN = "Username already taken"
 
+COOKIE_TIMEOUT=60*60*24*30 # 30 Days
+
 
 @app.route('/', methods=['GET'])
 def index(error=None):
@@ -40,8 +42,8 @@ def login():
     elif user.verify_password(password):
         resp = make_response(redirect(url_for('todo')))
         if remember:
-            resp.set_cookie("username", username)
-            resp.set_cookie("login_token", user.new_cookie())
+            resp.set_cookie("username", username, max_age=COOKIE_TIMEOUT)
+            resp.set_cookie("login_token", user.new_cookie(), max_age=COOKIE_TIMEOUT)
         return resp
     else:
         return render_template('index.html', error=ERR_BAD_LOGIN)
