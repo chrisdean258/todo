@@ -9,7 +9,6 @@ from datetime import timedelta
 
 class User():
     _users = {}
-    _api_tokens = {}
 
     def __init__(self, username):
         self.username = username
@@ -20,7 +19,7 @@ class User():
         return self.cookies.get(cookie) is not None
 
     def verify_password(self, password):
-        return self._hash(password) == self.hash
+        return self._hmac(password) == self.hash
 
     def verify_session(self, session):
         now = datetime.now()
@@ -40,8 +39,9 @@ class User():
     def extend_session(self, session):
         self.sessions[session] = datetime.now() + timedelta(minutes=5)
 
-    def _hash(self, password):
-        return sha256((self.salt + password).encode("utf-8")).hexdigest()
+    def _hmac(self, password):
+        inner = sha256(self.salt + password.encode("utf-8")).digest()
+        return sha256(self.salt + inner).hexdigest()
 
     def needs_reset(self, cookie):
         if not self.verify_cookie(cookie):
@@ -65,7 +65,7 @@ class User():
         inst.cookies = {}
         inst.sessions = {}
         inst.username = username
-        inst.salt = b64encode(urandom(128)).decode('utf-8')
-        inst.hash = inst._hash(password)
+        inst.salt = urandom(128)
+        inst.hash = inst._hmac(password)
         cls._users[username] = inst
         return inst

@@ -65,11 +65,15 @@ def verify_session(func):
 
 @app.route('/', methods=['GET'])
 @verify_cookie
+
+
 def index():
     return redirect(url_for('todo'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
+
+
 def login():
     if request.method == 'GET':
         return render_template('login.html')
@@ -90,6 +94,8 @@ def login():
 
 
 @app.route('/register', methods=['GET', 'POST'])
+
+
 def register():
     if request.method == "GET":
         return render_template("register.html")
@@ -112,6 +118,8 @@ def register():
 
 @app.route('/todo', methods=['GET'])
 @verify_session
+
+
 def todo():
     if request.method == "GET":
         return render_template("todo.html")
