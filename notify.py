@@ -49,8 +49,9 @@ class Notification(threading.Thread):
             Notification.queue.put(self)
 
     def send_sleep(self):
-        self.send_notification()
-        time.sleep(self.repeat.seconds)
+        if self.repeat:
+            self.send_notification()
+            time.sleep(self.repeat.seconds)
 
     def run(self):
         wait = (self.starttime - datetime.now()).seconds

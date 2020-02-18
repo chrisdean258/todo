@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import json
 from hashlib import sha256
 from os import urandom
 from base64 import b64encode
@@ -12,8 +13,16 @@ class User():
 
     def __init__(self, username):
         self.username = username
-        self.projects = []
         self.todos = []
+
+    def json(self):
+        return json.dumps(self.json_dict())
+
+    def json_dict(self):
+        return {
+            "username": self.username,
+            "todos": [t.json_dict() for t in self.todos]
+            }
 
     def verify_cookie(self, cookie):
         now = datetime.now()

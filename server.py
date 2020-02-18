@@ -7,6 +7,7 @@ from flask import render_template
 from flask import request
 from flask import url_for
 from functools import wraps
+from todo import Todo
 from user import User
 
 app = Flask(__name__)
@@ -35,7 +36,7 @@ def verify_cookie(func):
         username = request.cookies.get("username", "")
         user = User.getByUsername(username)
         if user and user.verify_cookie(token):
-            resp = make_response(func(*args, **kwargs))
+            resp = make_response(func(user, *args, **kwargs))
             if user.needs_reset(token):
                 user.invalidate_cookie(token)
                 set_cookie(resp, user)
@@ -53,7 +54,7 @@ def verify_session(func):
         username = request.cookies.get("username", "")
         user = User.getByUsername(username)
         if user:
-            resp = make_response(func(*args, **kwargs))
+            resp = make_response(func(user, *args, **kwargs))
             if user.verify_session(session):
                 user.extend_session(session)
             elif user.verify_cookie(token):
@@ -65,7 +66,7 @@ def verify_session(func):
 
 @app.route('/', methods=['GET'])
 @verify_cookie
-def index():
+def index(user):
     return redirect(url_for('todo'))
 
 
@@ -110,12 +111,16 @@ def register():
     return resp
 
 
-@app.route('/todo', methods=['GET'])
+@app.route('/todo', methods=['GET', 'POST'])
 @verify_session
-def todo():
-    if request.method == "GET":
-        return render_template("todo.html")
-    return "Nada yet"
+def todo(user):
+    if request.method == 'POST':
+        title = request.form.get("title", "")
+        desc = request.form.get("desc", "")
+        if title:
+            user.todos.append(Todo(title, desc))
+
+    return render_template("todo.html", data=user.json_dict())
 
 
 if __name__ == '__main__':

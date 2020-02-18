@@ -69,7 +69,6 @@ imap Jk jk
 inoremap \p :set pastei
 inoremap gqq gqqA
 inoremap <expr> jk CleverEsc()
-iabbr inport import
 cabbr w!! %!sudo tee > /dev/null %
 cabbr Q! =CommandLineStart(":", "q!", "Q!")
 cabbr $$ =CommandLineStart(":", ".,$s", "$$")
@@ -91,11 +90,10 @@ set backspace=indent,eol,start
 set backup
 set backupdir=~/.vim/backup//
 set cinoptions=(8,N-s,l1
-set commentstring=#\ %s
+set commentstring=<!--\ %s\ -->
 set fileencodings=ucs-bom,utf-8,default,latin1
 set helplang=en
 set hidden
-set hlsearch
 set incsearch
 set infercase
 set matchpairs=(:),{:},[:],<:>
@@ -132,37 +130,37 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 set shortmess=aoO
-badd +1 todo.py
+badd +3 templates/login.html
+badd +0 templates/todo.html
 argglobal
 silent! argdel *
-$argadd todo.py
-edit todo.py
+$argadd templates/login.html
+edit templates/todo.html
 set splitbelow splitright
 wincmd t
 set winminheight=1 winheight=1 winminwidth=1 winwidth=1
 argglobal
-nnoremap <buffer> <silent> \s :call SpellReplace()
-inoremap <buffer> <silent> \s :call SpellReplace()a
-iabbr <buffer> main =PythonMainAbbrev()
+inoremap <buffer> <expr>  HTMLCarriageReturn()
+inoremap <buffer> <silent> > >:call EndTagHTML()a
 setlocal keymap=
 setlocal noarabic
 setlocal autoindent
 setlocal backupcopy=
 setlocal balloonexpr=
 setlocal nobinary
-setlocal nobreakindent
+setlocal breakindent
 setlocal breakindentopt=
 setlocal bufhidden=
 setlocal buflisted
 setlocal buftype=
 setlocal nocindent
-setlocal cinkeys=0{,0},0),:,!^F,o,O,e
+setlocal cinkeys=0{,0},0),:,0#,!^F,o,O,e
 setlocal cinoptions=(8,N-s,l1
 setlocal cinwords=if,else,while,do,for,switch
 setlocal colorcolumn=
-setlocal comments=b:#,fb:-
-setlocal commentstring=#\ %s
-setlocal complete=.,w,b,u,t
+setlocal comments=s:<!--,m:\ \ \ \ ,e:-->
+setlocal commentstring=<!--%s-->
+setlocal complete=.,w,b,u,t,i
 setlocal concealcursor=
 setlocal conceallevel=0
 setlocal completefunc=
@@ -177,12 +175,12 @@ setlocal nodiff
 setlocal equalprg=
 setlocal errorformat=
 setlocal expandtab
-if &filetype != 'python'
-setlocal filetype=python
+if &filetype != 'html'
+setlocal filetype=html
 endif
 setlocal fixendofline
 setlocal foldcolumn=0
-setlocal nofoldenable
+setlocal foldenable
 setlocal foldexpr=0
 setlocal foldignore=#
 setlocal foldlevel=0
@@ -190,7 +188,7 @@ setlocal foldmarker={{{,}}}
 setlocal foldmethod=manual
 setlocal foldminlines=1
 setlocal foldnestmax=20
-setlocal foldtext=MyFold()
+setlocal foldtext=foldtext()
 setlocal formatexpr=
 setlocal formatoptions=tcq
 setlocal formatlistpat=^\\s*\\d\\+[\\]:.)}\\t\ ]\\s*
@@ -198,14 +196,14 @@ setlocal formatprg=
 setlocal grepprg=
 setlocal iminsert=0
 setlocal imsearch=-1
-setlocal include=^\\s*\\(from\\|import\\)
-setlocal includeexpr=substitute(v:fname,'\\.','/','g')
-setlocal indentexpr=GetPythonIndent(v:lnum)
-setlocal indentkeys=0{,0},:,!^F,o,O,e,<:>,=elif,=except
+setlocal include=
+setlocal includeexpr=
+setlocal indentexpr=HtmlIndent()
+setlocal indentkeys=o,O,<Return>,<>>,{,},!^F
 setlocal infercase
-setlocal iskeyword=@,48-57,_,192-255
-setlocal keywordprg=pydoc
-setlocal nolinebreak
+setlocal iskeyword=@,48-57,_,192-255,$
+setlocal keywordprg=
+setlocal linebreak
 setlocal nolisp
 setlocal lispwords=
 setlocal nolist
@@ -218,7 +216,7 @@ setlocal nrformats=bin,octal,hex
 set number
 setlocal number
 setlocal numberwidth=4
-setlocal omnifunc=python3complete#Complete
+setlocal omnifunc=htmlcomplete#CompleteTags
 setlocal path=
 setlocal nopreserveindent
 setlocal nopreviewwindow
@@ -229,23 +227,23 @@ setlocal relativenumber
 setlocal norightleft
 setlocal rightleftcmd=search
 setlocal noscrollbind
-setlocal shiftwidth=4
+setlocal shiftwidth=0
 setlocal noshortname
 setlocal signcolumn=auto
-setlocal nosmartindent
-setlocal softtabstop=4
+setlocal smartindent
+setlocal softtabstop=-1
 setlocal nospell
 setlocal spellcapcheck=[.?!]\\_[\\])'\"\	\ ]\\+
 setlocal spellfile=
 setlocal spelllang=en
 setlocal statusline=
-setlocal suffixesadd=.py
+setlocal suffixesadd=
 setlocal swapfile
 setlocal synmaxcol=3000
-if &syntax != 'python'
-setlocal syntax=python
+if &syntax != 'html'
+setlocal syntax=html
 endif
-setlocal tabstop=4
+setlocal tabstop=2
 setlocal tagcase=
 setlocal tags=
 setlocal termkey=
@@ -257,15 +255,15 @@ setlocal undolevels=-123456
 setlocal nowinfixheight
 setlocal nowinfixwidth
 set nowrap
-setlocal nowrap
+setlocal wrap
 setlocal wrapmargin=0
 silent! normal! zE
-let s:l = 16 - ((15 * winheight(0) + 37) / 74)
+let s:l = 12 - ((11 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 exe s:l
 normal! zt
-16
-normal! 043|
+12
+normal! 05|
 tabnext 1
 if exists('s:wipebuf')
   silent exe 'bwipe ' . s:wipebuf

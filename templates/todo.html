@@ -1,1 +1,24 @@
-test
+
+<HTML>
+  <head>
+    <title>Todo</title>
+  </head>
+  <body>
+    <script>
+      user = JSON.parse('{{data|tojson|safe}}');
+    </script>
+    <h1>Todo for {{data.username}}</h1>
+    {% for todo in data.todos %}
+    <h3>{{ todo.title }}</h3>
+    <div>
+      {{ todo.desc }}
+    </div>
+    {% endfor %}
+    <form action="/todo" method="post">
+      <input type="text" placeholder="Enter Todo Title" name="title" required> 
+      <input type="text" placeholder="Enter Todo Description" name="desc">
+      <button type="submit">Create Todo</button>
+    </form>
+  </body>
+</HTML>
+
