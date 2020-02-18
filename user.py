@@ -12,6 +12,8 @@ class User():
 
     def __init__(self, username):
         self.username = username
+        self.projects = []
+        self.todos = []
 
     def verify_cookie(self, cookie):
         now = datetime.now()
