@@ -7,7 +7,6 @@ from flask import render_template
 from flask import request
 from flask import url_for
 from functools import wraps
-from todo import Todo
 from user import User
 
 app = Flask(__name__)
@@ -118,7 +117,7 @@ def todo(user):
         title = request.form.get("title", "")
         desc = request.form.get("desc", "")
         if title:
-            user.todos.append(Todo(title, desc))
+            user.new_todo(title, desc)
 
     return render_template("todo.html", data=user.json_dict())
 

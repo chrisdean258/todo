@@ -12,6 +12,9 @@ class Todo:
         self.todos = []
         self._notify = []
 
+    def __repr__(self):
+        return f"Todo(title={self.title!r}, desc={self.desc!r})"
+
     def create_notification(self, start, repeat=None):
         self._notify.append(
             Notification(self.title, self.desc, start, repeat, -1))

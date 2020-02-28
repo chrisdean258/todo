@@ -2,18 +2,24 @@
 <HTML>
   <head>
     <title>Todo</title>
+    <style>
+      .todoitem{}
+      .todotitle{
+        font-weight: bold;
+      }
+      .tododesc{}
+    </style>
   </head>
   <body>
-    <script>
-      user = JSON.parse('{{data|tojson|safe}}');
-    </script>
     <h1>Todo for {{data.username}}</h1>
-    {% for todo in data.todos %}
-    <h3>{{ todo.title }}</h3>
-    <div>
-      {{ todo.desc }}
-    </div>
-    {% endfor %}
+    <table>
+      {% for todo in data.todos %}
+      <tr>
+        <td class="todotitle">{{ todo.title }}</td>
+        <td class="tododesc">{{ todo.desc }}</td>
+      </tr>
+      {% endfor %}
+    </table>
     <form action="/todo" method="post">
       <input type="text" placeholder="Enter Todo Title" name="title" required> 
       <input type="text" placeholder="Enter Todo Description" name="desc">
