@@ -7,6 +7,10 @@
         position: relative;
         left: 30px;
       }
+      .todo-add{
+        position: relative;
+        left: 15px;
+      }
     </style>
     <script>
       function todotoggle(node) {
@@ -34,6 +38,7 @@ function append_element(node) {
   var form = document.getElementById(node.id + "-form");
   if (form != null) return;
   var formdiv = document.createElement("div")
+  formdiv.classList.add("todo-add");
   formdiv.setAttribute("id", node.id + "-form");
   node.appendChild(formdiv);
 
@@ -52,13 +57,13 @@ function append_element(node) {
   h.setAttribute('name',"parent");
   h.setAttribute('value', node.id);
 
-
   var s = document.createElement("input");
   s.setAttribute('type',"submit");
   s.setAttribute('value',"⮕");
   form.appendChild(i);
   form.appendChild(h);
   form.appendChild(s);
+  node.addition_form = form;
   return formdiv;
 }
 
@@ -110,7 +115,8 @@ window.onload = function() {
   pnode.todos = pnode.children[0];
   for(var todo of todos)
     render_todos(todo, pnode.todos);
-  append_element(pnode);
+  var formdiv = append_element(pnode);
+  formdiv.style.left = "0px";
 }
     </script>
   </head>
