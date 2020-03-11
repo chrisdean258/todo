@@ -41,7 +41,7 @@ class Todo:
         return False
 
     def json(self):
-        return json.dumps(self.json_dict)
+        return json.dumps(self.json_dict())
 
     def json_dict(self):
         return {

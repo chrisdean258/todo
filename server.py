@@ -117,16 +117,27 @@ def todo(user):
         title = request.form.get("title", "")
         parent_id = request.form.get("parent", "")
         if title:
-            user.new_todo(parent_id, title)
+            return user.new_todo(parent_id, title).json()
 
     return render_template("todo.html", data=user.json_dict())
 
 
-@app.route('/deltodo/<todoid>', methods=['GET'])
+@app.route('/todo/<todo_id>', methods=["DELETE"])
 @verify_session
-def deltodo(user, todoid):
-    user.delete_todo_by_id(todoid)
-    return redirect(url_for("todo"))
+def chtodo(user, todo_id):
+    if request.method == 'DELETE':
+        # deleting the entry
+        user.delete_todo_by_id(todo_id)
+        return ("", 204)
+    if request.method == "POST":
+        newtitle = request.form.get("newtitle", "")
+        if newtitle:
+            return user.update_todo_by_id(todo_id, newtitle).json()
+        else:
+            return ('{ "error": "form must have a nonempty newtitle field" }',
+                    400)
+
+    return user.get_todo_by_id(todo_id).json()
 
 
 if __name__ == '__main__':

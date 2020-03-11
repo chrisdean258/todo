@@ -121,6 +121,16 @@ class User():
         expires = self.cookies[cookie]
         return datetime.now() + timedelta(days=15) > expires
 
+    def get_todo_by_id(self, todoid):
+        return Todo.find_by_id(todoid)
+
+    @save
+    def update_todo_by_id(self, todoid, newtitle):
+        todo = Todo.find_by_id(todoid)
+        if todo:
+            todo.title = newtitle
+        return todo
+
     @save
     def delete_todo_by_id(self, todoid):
         Todo.delete_by_id(self.todos, todoid)
@@ -132,12 +142,17 @@ class User():
 
     @save
     def new_todo(self, parent_id, *args, **kwargs):
+        rtn = Todo(*args, **kwargs)
+
         if parent_id == "" or parent_id == "todos":
-            self.todos.append(Todo(*args, **kwargs))
+            self.todos.append(rtn)
         else:
             parent = Todo.find_by_id(self.todos, parent_id)
             if parent:
                 parent.todos.append(Todo(*args, **kwargs))
+            else:
+                self.todos.append(rtn)
+        return rtn
 
     @staticmethod
     def getByUsername(username):

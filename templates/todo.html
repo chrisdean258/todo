@@ -27,30 +27,67 @@
     <script>
 
 function togglecontainer(node, just_show=false) {
-  containernode = node.children("#" + node.attr("id") + "-container");
-  if (containernode.css("display") == "none" || just_show)
+  var containernode = node.children("#" + node.attr("id") + "-container");
+  var btn = node.children("#" + node.attr("id") + "-toggle");
+  if (containernode.css("display") == "none" || just_show) {
     containernode.css("display", "block");
-  else
+    btn.html("&uarr;")
+  }
+  else {
     containernode.css("display", "none");
+    btn.html("&equiv;")
+  }
 }
 
 function toggleaddform(node) {
-  formnode = node.find("#" + node.attr("id") + "-form");
+  var formnode = node.find("#" + node.attr("id") + "-formdiv");
+  var btn = node.find("#" + node.attr("id") + "-add");
   if (formnode.css("display") == "none") {
     formnode.css("display", "block");
     togglecontainer(node, true);
+    btn.html("&minus;")
   }
-  else
+  else {
     formnode.css("display", "none");
+    btn.html("&plus;")
+  }
+}
+
+function add_todo(pnode) {
+  parentid = pnode.attr("id");
+  node = pnode.find("#" + parentid + "-newtitle")
+
+  data = {
+    "parent": parentid,
+    "title": node.val()
+  }
+
+  $.post("/todo", data, function (data) {
+    resp = data;
+    newtodo = JSON.parse(data);
+    render_todo(newtodo, pnode);
+    node.val("");
+  });
+}
+
+function del_todo(pnode) {
+  parentid = pnode.attr("id");
+  $.ajax({
+         url: "/todo/" + parentid,
+         type: "DELETE",
+         success: function(result) {
+           pnode.remove();
+         }
+  })
 }
 
 
-function render_todos(todo, pnode) {
+function render_todo(todo, pnode) {
   var todonode = pnode.find("#" + pnode.attr("id") + "-list");
   var newnode = $("<div>").attr("id", todo.id)
 
   var delbtn = $("<button>").attr("id", todo.id + "-delete").addClass("delete-button").html("&times;")
-    .click(function() { del(newnode); });
+    .click(function() { del_todo(newnode); });
   var addbtn = $("<button>").attr("id", todo.id + "-add").addClass("add-button").html("&plus;")
     .click(function() { toggleaddform(newnode); });
   var expandbtn = $("<button>").attr("id", todo.id + "-toggle").addClass("toggle-button").html("&equiv;")
@@ -58,24 +95,32 @@ function render_todos(todo, pnode) {
   newnode.append(delbtn).append(addbtn).append(expandbtn);
 
   newnode.append($("<div>").attr("id", todo.id + "-title").css("display", "inline").addClass("todo-title").text(todo.title));
-  var container = $("<div>").attr("id", todo.id + "-container").addClass("todo-container");
+  var container = $("<div>").attr("id", todo.id + "-container").addClass("todo-container").css("display", "none");
   newnode.append(container);
   container.append($("<div>").attr("id", todo.id + "-list").addClass("todo-list"));
-  formdiv = $("<div>").attr("id", todo.id + "-form").addClass("todo-form").css("display", "none").text("test");
+  formdiv = $("<div>").attr("id", todo.id + "-formdiv").addClass("todo-form").css("display", "none");
+  var form = $("<form>").submit(function(ev) { ev.preventDefault(); add_todo(newnode); });
+  formdiv.append(form)
+  form.append($("<input>").attr("type", "text").attr("id", todo.id + "-newtitle"));
+  form.append($("<input>").attr("type", "submit"));
+
   container.append(formdiv);
   todonode.append(newnode);
+  return newnode;
+}
 
-
+function render_todos(todo, pnode) {
+  var newnode = render_todo(todo, pnode);
   for(var child_todo of todo.todos) 
     render_todos(child_todo, newnode);
 }
 
 window.onload = function() {
-  var todos = JSON.parse('{{data.todos|tojson}}');
+  todos = JSON.parse('{{data.todos|tojson}}');
   var pnode = $("#todos")
   for(var todo of todos)
     render_todos(todo, pnode);
-  //append_element(pnode);
+  togglecontainer(pnode, true);
 }
     </script>
   </head>
