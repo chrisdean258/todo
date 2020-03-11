@@ -11,118 +11,82 @@
         position: relative;
         left: 15px;
       }
-    </style>
-    <script>
-      function todotoggle(node) {
-        if (node.expanded) collapse(node);
-        else expand(node);
+      button {
+        background-color: #555555;
+        border: none;
+        color: white;
+        /*padding: 15px 32px;*/
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
       }
-function expand(node) {
-  node.expanded = true;
-  for(child of node.todos.children) {
-    child.style.display = "block"
+
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script>
+
+function togglecontainer(node, just_show=false) {
+  containernode = node.children("#" + node.attr("id") + "-container");
+  if (containernode.css("display") == "none" || just_show)
+    containernode.css("display", "block");
+  else
+    containernode.css("display", "none");
+}
+
+function toggleaddform(node) {
+  formnode = node.find("#" + node.attr("id") + "-form");
+  if (formnode.css("display") == "none") {
+    formnode.css("display", "block");
+    togglecontainer(node, true);
   }
-  toggle = document.getElementById(node.id + "-toggle");
-  if(toggle) toggle.innerHTML = "-";
-}
-function collapse(node) {
-  node.expanded = false;
-  for(child of node.todos.children) {
-    child.style.display = "none"
-  }
-  toggle = document.getElementById(node.id + "-toggle");
-  if(toggle) toggle.innerHTML = "+";
-}
-function append_element(node) {
-  expand(node);
-  var form = document.getElementById(node.id + "-form");
-  if (form != null) return;
-  var formdiv = document.createElement("div")
-  formdiv.classList.add("todo-add");
-  formdiv.setAttribute("id", node.id + "-form");
-  node.appendChild(formdiv);
-
-  form = document.createElement("form")
-  formdiv.appendChild(form);
-  form.setAttribute("action", "/todo");
-  form.setAttribute("method", "post");
-
-  var i = document.createElement("input"); 
-  i.setAttribute('type',"text");
-  i.setAttribute('name',"title");
-  i.setAttribute('placeholder',"New item");
-
-  var h = document.createElement("input"); 
-  h.setAttribute('type',"hidden");
-  h.setAttribute('name',"parent");
-  h.setAttribute('value', node.id);
-
-  var s = document.createElement("input");
-  s.setAttribute('type',"submit");
-  s.setAttribute('value',"⮕");
-  form.appendChild(i);
-  form.appendChild(h);
-  form.appendChild(s);
-  node.addition_form = form;
-  return formdiv;
+  else
+    formnode.css("display", "none");
 }
 
-function createbutton(pnode, text, callback, tag) {
-  var button = document.createElement("button");
-  pnode.appendChild(button);
-  if(pnode.id) button.setAttribute("id", pnode.id + tag);
-  button.onclick = callback;
-  var buttontext = document.createTextNode(text)
-  button.appendChild(buttontext);
-  return button;
-}
 
 function render_todos(todo, pnode) {
-  var newnode = document.createElement("div");
-  newnode.expanded = false;
-  pnode.appendChild(newnode);
-  newnode.setAttribute("id", todo.id);
-  newnode.style.display = "none"
+  var todonode = pnode.find("#" + pnode.attr("id") + "-list");
+  var newnode = $("<div>").attr("id", todo.id)
 
-  var delete_form = document.createElement("form");
-  var delete_btn = document.createElement("input"); 
-  newnode.appendChild(delete_form);
-  delete_form.appendChild(delete_btn);
-  delete_form.setAttribute("action", "/deltodo/" + todo.id);
-  delete_form.setAttribute("method", "delete");
-  delete_btn.setAttribute("type", "submit");
-  delete_btn.setAttribute('value',"x");
-  delete_form.style.display = "inline";
+  var delbtn = $("<button>").attr("id", todo.id + "-delete").addClass("delete-button").html("&times;")
+    .click(function() { del(newnode); });
+  var addbtn = $("<button>").attr("id", todo.id + "-add").addClass("add-button").html("&plus;")
+    .click(function() { toggleaddform(newnode); });
+  var expandbtn = $("<button>").attr("id", todo.id + "-toggle").addClass("toggle-button").html("&equiv;")
+    .click(function() { togglecontainer(newnode) });
+  newnode.append(delbtn).append(addbtn).append(expandbtn);
 
+  newnode.append($("<div>").attr("id", todo.id + "-title").css("display", "inline").addClass("todo-title").text(todo.title));
+  var container = $("<div>").attr("id", todo.id + "-container").addClass("todo-container");
+  newnode.append(container);
+  container.append($("<div>").attr("id", todo.id + "-list").addClass("todo-list"));
+  formdiv = $("<div>").attr("id", todo.id + "-form").addClass("todo-form").css("display", "none").text("test");
+  container.append(formdiv);
+  todonode.append(newnode);
 
-  createbutton(newnode, "+", function() { todotoggle(newnode); }, "-toggle");
-  createbutton(newnode, "≣", function() { append_element(newnode); }, "-addbutton");
-
-  var contents = document.createTextNode(todo.title);
-  newnode.appendChild(contents);
-
-
-  newnode.todos = document.createElement("div");
-  newnode.todos.classList.add("todo-container");
-  newnode.appendChild(newnode.todos);
 
   for(var child_todo of todo.todos) 
-    render_todos(child_todo, newnode.todos);
+    render_todos(child_todo, newnode);
 }
+
 window.onload = function() {
   var todos = JSON.parse('{{data.todos|tojson}}');
-  var pnode = document.getElementById("todos");
-  pnode.todos = pnode.children[0];
+  var pnode = $("#todos")
   for(var todo of todos)
-    render_todos(todo, pnode.todos);
-  var formdiv = append_element(pnode);
-  formdiv.style.left = "0px";
+    render_todos(todo, pnode);
+  //append_element(pnode);
 }
     </script>
   </head>
   <body>
     <h1>Todo for {{data.username}}</h1>
-    <div id="todos"><div></div></div>
+    <div id="todos">
+      <div id="todos-container" class="todo-container">
+        <div id="todos-list" class="todo-list"></div>
+        <div id="todos-form" class="todo-form"></div>
+      </div>
+    </div>
   </body>
 </HTML>
 
