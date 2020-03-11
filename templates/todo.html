@@ -70,15 +70,20 @@ function add_todo(pnode) {
   });
 }
 
-function del_todo(pnode) {
-  parentid = pnode.attr("id");
+function del_todo(node) {
+  nodeid = node.attr("id");
   $.ajax({
-         url: "/todo/" + parentid,
+         url: "/todo/" + nodeid,
          type: "DELETE",
          success: function(result) {
            pnode.remove();
          }
   })
+}
+
+function update_todo(node) {
+  nodeid = node.attr("id");
+  $.post("/todo/" + nodeid, { newtitle: $("#" + nodeid + "-title").text() })
 }
 
 
@@ -94,7 +99,9 @@ function render_todo(todo, pnode) {
     .click(function() { togglecontainer(newnode) });
   newnode.append(delbtn).append(addbtn).append(expandbtn);
 
-  newnode.append($("<div>").attr("id", todo.id + "-title").css("display", "inline").addClass("todo-title").text(todo.title));
+  var titlediv = $("<div>").attr("id", todo.id + "-title").css("display", "inline").addClass("todo-title").text(todo.title).attr("contentEditable", true);
+  titlediv.focusout(function() { update_todo(newnode); });
+  newnode.append(titlediv);
   var container = $("<div>").attr("id", todo.id + "-container").addClass("todo-container").css("display", "none");
   newnode.append(container);
   container.append($("<div>").attr("id", todo.id + "-list").addClass("todo-list"));

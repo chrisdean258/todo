@@ -122,11 +122,11 @@ class User():
         return datetime.now() + timedelta(days=15) > expires
 
     def get_todo_by_id(self, todoid):
-        return Todo.find_by_id(todoid)
+        return Todo.find_by_id(self.todos, todoid)
 
     @save
     def update_todo_by_id(self, todoid, newtitle):
-        todo = Todo.find_by_id(todoid)
+        todo = self.get_todo_by_id(todoid)
         if todo:
             todo.title = newtitle
         return todo

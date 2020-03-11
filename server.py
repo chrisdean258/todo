@@ -122,7 +122,7 @@ def todo(user):
     return render_template("todo.html", data=user.json_dict())
 
 
-@app.route('/todo/<todo_id>', methods=["DELETE"])
+@app.route('/todo/<todo_id>', methods=["GET", "POST", "DELETE"])
 @verify_session
 def chtodo(user, todo_id):
     if request.method == 'DELETE':
@@ -130,6 +130,7 @@ def chtodo(user, todo_id):
         user.delete_todo_by_id(todo_id)
         return ("", 204)
     if request.method == "POST":
+        print(request.form)
         newtitle = request.form.get("newtitle", "")
         if newtitle:
             return user.update_todo_by_id(todo_id, newtitle).json()
