@@ -115,11 +115,18 @@ def register():
 def todo(user):
     if request.method == 'POST':
         title = request.form.get("title", "")
-        desc = request.form.get("desc", "")
+        parent_id = request.form.get("parent", "")
         if title:
-            user.new_todo(title, desc)
+            user.new_todo(parent_id, title)
 
     return render_template("todo.html", data=user.json_dict())
+
+
+@app.route('/deltodo/<todoid>', methods=['GET'])
+@verify_session
+def deltodo(user, todoid):
+    user.delete_todo_by_id(todoid)
+    return redirect(url_for("todo"))
 
 
 if __name__ == '__main__':
