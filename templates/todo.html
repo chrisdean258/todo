@@ -5,11 +5,7 @@
     <style>
       .todo-container{
         position: relative;
-        left: 30px;
-      }
-      .todo-add{
-        position: relative;
-        left: 15px;
+        left: 21px;
       }
       button {
         background-color: #555555;
@@ -25,6 +21,7 @@
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script>
+      const emptytodo = { id: "", title: "New item" }
 
 function togglecontainer(node, just_show=false) {
   var containernode = node.children("#" + node.attr("id") + "-container");
@@ -39,79 +36,76 @@ function togglecontainer(node, just_show=false) {
   }
 }
 
-function toggleaddform(node) {
-  var formnode = node.find("#" + node.attr("id") + "-formdiv");
-  var btn = node.find("#" + node.attr("id") + "-add");
-  if (formnode.css("display") == "none") {
-    formnode.css("display", "block");
-    togglecontainer(node, true);
-    btn.html("&minus;")
-  }
-  else {
-    formnode.css("display", "none");
-    btn.html("&plus;")
-  }
-}
-
-function add_todo(pnode) {
+function add_todo(pnode, title) {
   parentid = pnode.attr("id");
   node = pnode.find("#" + parentid + "-newtitle")
 
   data = {
     "parent": parentid,
-    "title": node.val()
+    "title": title
   }
 
-  $.post("/todo", data, function (data) {
-    resp = data;
+  $.post("/todo/", data, function (data) {
     newtodo = JSON.parse(data);
-    render_todo(newtodo, pnode);
-    node.val("");
+    var newnode = render_todo(newtodo, pnode);
+    render_todo(emptytodo, newnode, true);
+    render_todo(emptytodo, pnode, true);
   });
 }
 
-function del_todo(node) {
+function del_todo(node, fake=false) {
+  if(fake) return;
   nodeid = node.attr("id");
   $.ajax({
          url: "/todo/" + nodeid,
          type: "DELETE",
          success: function(result) {
-           pnode.remove();
+           node.remove();
          }
   })
 }
 
-function update_todo(node) {
-  nodeid = node.attr("id");
-  $.post("/todo/" + nodeid, { newtitle: $("#" + nodeid + "-title").text() })
+function update_todo(node, fake=false) {
+  if(fake) {
+    parent_node = node.parent().parent().parent();
+    add_todo(parent_node, node.find("#" + node.attr("id") + "-title").text());
+    node.remove();
+  }
+  else {
+    nodeid = node.attr("id");
+    $.post("/todo/" + nodeid, { newtitle: $("#" + nodeid + "-title").text() })
+  }
 }
 
-
-function render_todo(todo, pnode) {
+FAKE_ID = 1;
+function render_todo(todo, pnode, fake=false) {
+  var id = todo.id;
+  if(fake) id = "" + FAKE_ID++;
   var todonode = pnode.find("#" + pnode.attr("id") + "-list");
-  var newnode = $("<div>").attr("id", todo.id)
+  var newnode = $("<div>").attr("id", id)
 
-  var delbtn = $("<button>").attr("id", todo.id + "-delete").addClass("delete-button").html("&times;")
-    .click(function() { del_todo(newnode); });
-  var addbtn = $("<button>").attr("id", todo.id + "-add").addClass("add-button").html("&plus;")
-    .click(function() { toggleaddform(newnode); });
-  var expandbtn = $("<button>").attr("id", todo.id + "-toggle").addClass("toggle-button").html("&equiv;")
+  var delbtn = $("<button>").attr("id", id + "-delete").addClass("delete-button").html("&times;")
+    .click(function() { del_todo(newnode, fake); });
+  var expandbtn = $("<button>").attr("id", id + "-toggle").addClass("toggle-button").html("&equiv;")
     .click(function() { togglecontainer(newnode) });
-  newnode.append(delbtn).append(addbtn).append(expandbtn);
+  newnode.append(delbtn).append(expandbtn);
 
-  var titlediv = $("<div>").attr("id", todo.id + "-title").css("display", "inline").addClass("todo-title").text(todo.title).attr("contentEditable", true);
-  titlediv.focusout(function() { update_todo(newnode); });
+  var titlediv = $("<div>").attr("id", id + "-title").css("display", "inline").addClass("todo-title").text(todo.title).attr("contentEditable", true);
+
   newnode.append(titlediv);
-  var container = $("<div>").attr("id", todo.id + "-container").addClass("todo-container").css("display", "none");
-  newnode.append(container);
-  container.append($("<div>").attr("id", todo.id + "-list").addClass("todo-list"));
-  formdiv = $("<div>").attr("id", todo.id + "-formdiv").addClass("todo-form").css("display", "none");
-  var form = $("<form>").submit(function(ev) { ev.preventDefault(); add_todo(newnode); });
-  formdiv.append(form)
-  form.append($("<input>").attr("type", "text").attr("id", todo.id + "-newtitle"));
-  form.append($("<input>").attr("type", "submit"));
 
-  container.append(formdiv);
+  titlediv.focus(function() { this.old_value = $(this).html(); });
+  titlediv.focusout(function() {
+    if (this.old_value != undefined && this.old_value != $(this).html()) {
+      update_todo(newnode, fake);
+    }
+  });
+
+
+  var container = $("<div>").attr("id", id + "-container").addClass("todo-container").css("display", "none");
+  newnode.append(container);
+  container.append($("<div>").attr("id", id + "-list").addClass("todo-list"));
+
   todonode.append(newnode);
   return newnode;
 }
@@ -120,6 +114,7 @@ function render_todos(todo, pnode) {
   var newnode = render_todo(todo, pnode);
   for(var child_todo of todo.todos) 
     render_todos(child_todo, newnode);
+  empty_node = render_todo(emptytodo, newnode, true);
 }
 
 window.onload = function() {
@@ -127,6 +122,7 @@ window.onload = function() {
   var pnode = $("#todos")
   for(var todo of todos)
     render_todos(todo, pnode);
+  render_todo(emptytodo, pnode, true);
   togglecontainer(pnode, true);
 }
     </script>

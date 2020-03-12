@@ -110,7 +110,7 @@ def register():
     return resp
 
 
-@app.route('/todo', methods=['GET', 'POST'])
+@app.route('/todo/', methods=['GET', 'POST'])
 @verify_session
 def todo(user):
     if request.method == 'POST':
@@ -130,7 +130,6 @@ def chtodo(user, todo_id):
         user.delete_todo_by_id(todo_id)
         return ("", 204)
     if request.method == "POST":
-        print(request.form)
         newtitle = request.form.get("newtitle", "")
         if newtitle:
             return user.update_todo_by_id(todo_id, newtitle).json()
